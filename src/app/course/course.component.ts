@@ -12,7 +12,7 @@ import {
   withLatestFrom,
   concatAll, shareReplay
 } from 'rxjs/operators';
-import { merge, fromEvent, Observable, concat, of } from 'rxjs';
+import { merge, fromEvent, Observable, concat } from 'rxjs';
 
 import { Course } from '../model/course';
 import { Lesson } from '../model/lesson';
@@ -44,9 +44,9 @@ export class CourseComponent implements OnInit, AfterViewInit {
 
     this.course$ = createHttpObservable(`/api/courses/${this.courseId}`);
 
-    this.getLessons();
+    const lessonsInital$ = this.getLessons();
 
-    fromEvent<KeyboardEvent>(this.input.nativeElement, 'keyup')
+    const lessonsFiltered$ = fromEvent<KeyboardEvent>(this.input.nativeElement, 'keyup')
       .pipe(
         // Mapping to the string value must come anywhere before 'distinctUntilChanged'
         map(event => (event.target as HTMLInputElement).value),
@@ -54,20 +54,24 @@ export class CourseComponent implements OnInit, AfterViewInit {
         debounceTime(500),
         // Do not emit a change if the current value does not change with the current key press.
         // IOW if the user presses the Shift, Ctrl, etc... buttons
-        distinctUntilChanged()
-      )
-      .subscribe(filterTerm => {
-        // console.log(filterTerm);
-        this.getLessons(filterTerm);
-      });
+        distinctUntilChanged(),
+        // If, while doing an http call, another key is pressed by the user,
+        // switchMap will cancel the current http request and switch to a new one
+        switchMap(filterTerm => {
+          // console.log(filterTerm);
+          return this.getLessons(filterTerm);
+        })
+      );
+
+    this.lessons$ = concat(lessonsInital$, lessonsFiltered$);
   }
 
   ngAfterViewInit() {
 
   }
 
-  getLessons(filter: string = '') {
-    this.lessons$ = createHttpObservable(`/api/lessons?courseId=${this.courseId}&filter=${filter}&pageSize=100`)
+  getLessons(filter: string = ''): Observable<Lesson[]> {
+    return createHttpObservable(`/api/lessons?courseId=${this.courseId}&filter=${filter}&pageSize=100`)
       .pipe(
         map(response => response['payload'])
       );
