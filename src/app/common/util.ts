@@ -7,12 +7,24 @@ export function createHttpObservable(url: string): Observable<any> {
     const abortSignal: AbortSignal = abortController.signal;
 
     fetch(url, { signal: abortSignal })
-      .then(response => response.json())
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          console.log(response);
+          throw new Error(`Unable to perform request: Code: ${response.status} Msg: ${response.statusText}`);
+        }
+      })
       .then(body => {
         observer.next(body);
         observer.complete();
       })
-      .catch(error => observer.error(error));
+      // This error block is on triggered in the case of a fatal error, ie. network failure,
+      // something that the browser cannot recover from
+      .catch(error => {
+        // console.error('FETCH ERROR:', error);
+        observer.error(error);
+      });
 
     // The method returned by the created observable is the unsubscribe function
     return () => abortController.abort();

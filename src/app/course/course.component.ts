@@ -10,9 +10,9 @@ import {
   concatMap,
   switchMap,
   withLatestFrom,
-  concatAll, shareReplay
+  concatAll, shareReplay, debounce
 } from 'rxjs/operators';
-import { merge, fromEvent, Observable, concat } from 'rxjs';
+import { merge, fromEvent, Observable, concat, timer } from 'rxjs';
 
 import { Course } from '../model/course';
 import { Lesson } from '../model/lesson';
@@ -44,26 +44,31 @@ export class CourseComponent implements OnInit, AfterViewInit {
 
     this.course$ = createHttpObservable(`/api/courses/${this.courseId}`);
 
-    const lessonsInital$ = this.getLessons();
+    // const lessonsInital$ = this.getLessons();
 
-    const lessonsFiltered$ = fromEvent<KeyboardEvent>(this.input.nativeElement, 'keyup')
+    /*const lessonsFiltered$ =*/
+    this.lessons$ = fromEvent<KeyboardEvent>(this.input.nativeElement, 'keyup')
       .pipe(
         // Mapping to the string value must come anywhere before 'distinctUntilChanged'
         map(event => (event.target as HTMLInputElement).value),
-        // Only allow values to emitted if they remain unchanged for 500ms
-        debounceTime(500),
+        // Gives the observable an initial value
+        startWith(''),
         // Do not emit a change if the current value does not change with the current key press.
         // IOW if the user presses the Shift, Ctrl, etc... buttons
         distinctUntilChanged(),
+        // Only allow values to emitted if they remain unchanged for 500ms
+        // debounceTime(500),
+        // If the input box is blank then do the search immediately
+        debounce(value => value === '' ? timer(0) : timer(500)),
         // If, while doing an http call, another key is pressed by the user,
         // switchMap will cancel the current http request and switch to a new one
         switchMap(filterTerm => {
-          // console.log(filterTerm);
+          console.log('Filter term: ', filterTerm);
           return this.getLessons(filterTerm);
         })
       );
 
-    this.lessons$ = concat(lessonsInital$, lessonsFiltered$);
+    // this.lessons$ = concat(lessonsInital$, lessonsFiltered$);
   }
 
   ngAfterViewInit() {
