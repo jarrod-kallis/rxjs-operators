@@ -19,8 +19,8 @@ export function createHttpObservable(url: string): Observable<any> {
         observer.next(body);
         observer.complete();
       })
-      // This error block is on triggered in the case of a fatal error, ie. network failure,
-      // something that the browser cannot recover from
+      // This error block is only triggered in the case of a fatal error, ie. network failure,
+      // Something that the browser cannot recover from
       .catch(error => {
         // console.error('FETCH ERROR:', error);
         observer.error(error);

@@ -17,6 +17,7 @@ import { merge, fromEvent, Observable, concat, timer } from 'rxjs';
 import { Course } from '../model/course';
 import { Lesson } from '../model/lesson';
 import { createHttpObservable } from '../common/util';
+import { debug, LogLevel } from '../common/debugOperator';
 
 
 @Component({
@@ -31,8 +32,6 @@ export class CourseComponent implements OnInit, AfterViewInit {
   course$: Observable<Course>;
   lessons$: Observable<Lesson[]>;
 
-  filtered$: Observable<string>;
-
   @ViewChild('searchInput', { static: true }) input: ElementRef;
 
   constructor(private route: ActivatedRoute) {
@@ -42,8 +41,10 @@ export class CourseComponent implements OnInit, AfterViewInit {
 
     this.courseId = +this.route.snapshot.params['id'];
 
-    this.course$ = createHttpObservable(`/api/courses/${this.courseId}`);
-
+    this.course$ = createHttpObservable(`/api/courses/${this.courseId}`)
+      .pipe(
+        debug(LogLevel.DEBUG, 'Course:')
+      );
     // const lessonsInital$ = this.getLessons();
 
     /*const lessonsFiltered$ =*/
@@ -58,12 +59,13 @@ export class CourseComponent implements OnInit, AfterViewInit {
         distinctUntilChanged(),
         // Only allow values to emitted if they remain unchanged for 500ms
         // debounceTime(500),
-        // If the input box is blank then do the search immediately
+        // If the input box is blank then do the search immediately, otherwise do the same debounceTime
         debounce(value => value === '' ? timer(0) : timer(500)),
+        debug(LogLevel.DEBUG, 'Search Term:'),
         // If, while doing an http call, another key is pressed by the user,
         // switchMap will cancel the current http request and switch to a new one
         switchMap(filterTerm => {
-          console.log('Filter term: ', filterTerm);
+          // console.log('Filter term: ', filterTerm);
           return this.getLessons(filterTerm);
         })
       );
@@ -78,7 +80,8 @@ export class CourseComponent implements OnInit, AfterViewInit {
   getLessons(filter: string = ''): Observable<Lesson[]> {
     return createHttpObservable(`/api/lessons?courseId=${this.courseId}&filter=${filter}&pageSize=100`)
       .pipe(
-        map(response => response['payload'])
+        map(response => response['payload']),
+        debug(LogLevel.DEBUG, 'Lessons')
       );
   }
 
