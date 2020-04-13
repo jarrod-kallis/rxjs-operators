@@ -12,7 +12,7 @@ import {
   withLatestFrom,
   concatAll, shareReplay, debounce
 } from 'rxjs/operators';
-import { merge, fromEvent, Observable, concat, timer } from 'rxjs';
+import { merge, fromEvent, Observable, concat, timer, forkJoin } from 'rxjs';
 
 import { Course } from '../model/course';
 import { Lesson } from '../model/lesson';
@@ -71,6 +71,15 @@ export class CourseComponent implements OnInit, AfterViewInit {
       );
 
     // this.lessons$ = concat(lessonsInital$, lessonsFiltered$);
+
+    // forkJoin: Both observables have to complete in order for the forkJoin to complete
+    // this.lessons$ = this.getLessons();
+    // forkJoin([this.course$, this.lessons$])
+    //   .subscribe(
+    //     ([course, lessons]) => console.log('forkJoin next: ', course, lessons),
+    //     error => console.error('forkJoin error:', error),
+    //     () => console.log('forkJoin complete')
+    //   );
   }
 
   ngAfterViewInit() {
