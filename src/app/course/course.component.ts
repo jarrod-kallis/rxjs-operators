@@ -18,6 +18,7 @@ import { Course } from '../model/course';
 import { Lesson } from '../model/lesson';
 import { createHttpObservable } from '../common/util';
 import { debug, LogLevel } from '../common/debugOperator';
+import { StoreService } from '../common/store.service';
 
 
 @Component({
@@ -34,17 +35,14 @@ export class CourseComponent implements OnInit, AfterViewInit {
 
   @ViewChild('searchInput', { static: true }) input: ElementRef;
 
-  constructor(private route: ActivatedRoute) {
+  constructor(private route: ActivatedRoute, private store: StoreService) {
   }
 
   ngOnInit() {
-
+    console.log('Course Init');
     this.courseId = +this.route.snapshot.params['id'];
 
-    this.course$ = createHttpObservable(`/api/courses/${this.courseId}`)
-      .pipe(
-        debug(LogLevel.DEBUG, 'Course:')
-      );
+    this.course$ = this.store.selectCourseById(this.courseId);
     // const lessonsInital$ = this.getLessons();
 
     /*const lessonsFiltered$ =*/
@@ -66,7 +64,7 @@ export class CourseComponent implements OnInit, AfterViewInit {
         // switchMap will cancel the current http request and switch to a new one
         switchMap(filterTerm => {
           // console.log('Filter term: ', filterTerm);
-          return this.getLessons(filterTerm);
+          return this.store.getLessons(this.courseId, filterTerm);
         })
       );
 
@@ -86,13 +84,13 @@ export class CourseComponent implements OnInit, AfterViewInit {
 
   }
 
-  getLessons(filter: string = ''): Observable<Lesson[]> {
-    return createHttpObservable(`/api/lessons?courseId=${this.courseId}&filter=${filter}&pageSize=100`)
-      .pipe(
-        map(response => response['payload']),
-        debug(LogLevel.DEBUG, 'Lessons')
-      );
-  }
+  // getLessons(filter: string = ''): Observable<Lesson[]> {
+  //   return createHttpObservable(`/api/lessons?courseId=${this.courseId}&filter=${filter}&pageSize=100`)
+  //     .pipe(
+  //       map(response => response['payload']),
+  //       debug(LogLevel.DEBUG, 'Lessons')
+  //     );
+  // }
 
 
 }

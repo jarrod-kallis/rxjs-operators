@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, throwError, timer } from 'rxjs';
+import { BehaviorSubject, Observable, throwError, timer, from } from 'rxjs';
 
 import { Course } from '../model/course';
 import { createHttpObservable } from './util';
-import { catchError, finalize, map, retryWhen, delayWhen, shareReplay, tap } from 'rxjs/operators';
+import { catchError, finalize, map, retryWhen, delayWhen, shareReplay, tap, exhaustMap } from 'rxjs/operators';
+import { debug, LogLevel } from './debugOperator';
+import { Lesson } from '../model/lesson';
 
 @Injectable({
   providedIn: 'root'
@@ -67,10 +69,49 @@ export class StoreService {
     return this.filterCourseByCategory('ADVANCED');
   }
 
+  public selectCourseById(id: number): Observable<Course> {
+    return this._courses$
+      .pipe(
+        map(courses => courses?.find(course => course.id === id))
+      );
+  }
+
   private filterCourseByCategory(filterCategory: string): Observable<Course[]> {
     return this._courses$
       .pipe(
         map(courses => courses?.filter(course => course.category === filterCategory))
+      );
+  }
+
+  public saveCourse(id: number, updatedCourse: Course): Observable<any> {
+    // Find course and update it in memory
+    const courses = this.coursesSubject.getValue()
+      .map(course => {
+        if (course.id === id) {
+          course = { ...course, ...updatedCourse };
+        }
+
+        return course;
+      });
+
+    // Emit the optimistic update of the course
+    this.coursesSubject.next(courses);
+
+    // Update the course in the DB
+    return from(fetch(`/api/courses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updatedCourse),
+      headers: {
+        'content-type': 'application/json'
+      }
+    }));
+  }
+
+  public getLessons(courseId: number, filter: string = ''): Observable<Lesson[]> {
+    return createHttpObservable(`/api/lessons?courseId=${courseId}&filter=${filter}&pageSize=100`)
+      .pipe(
+        map(response => response['payload']),
+        debug(LogLevel.DEBUG, 'Lessons')
       );
   }
 }

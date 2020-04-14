@@ -1,45 +1,48 @@
 <h2 mat-dialog-title>{{course.description}}</h2>
 
-<mat-dialog-content [formGroup]="form">
+<form [formGroup]="form" (ngSubmit)="submit()">
 
-  <mat-form-field>
-    <input matInput placeholder="Course Description" formControlName="description">
-  </mat-form-field>
+  <mat-dialog-content>
 
-  <mat-form-field>
-    <mat-select placeholder="Select category" formControlName="category">
+    <mat-form-field>
+      <input matInput placeholder="Course Description" formControlName="description">
+    </mat-form-field>
 
-      <mat-option value="BEGINNER">
-        Beginner
-      </mat-option>
-      <mat-option value="INTERMEDIATE">
-        Intermediate
-      </mat-option>
-      <mat-option value="ADVANCED">
-        Advanced
-      </mat-option>
-    </mat-select>
-  </mat-form-field>
+    <mat-form-field>
+      <mat-select placeholder="Select category" formControlName="category">
 
-  <mat-form-field>
-    <input matInput [matDatepicker]="myDatepicker" #searchInput formControlName="releasedAt">
+        <mat-option value="BEGINNER">
+          Beginner
+        </mat-option>
+        <mat-option value="INTERMEDIATE">
+          Intermediate
+        </mat-option>
+        <mat-option value="ADVANCED">
+          Advanced
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
 
-    <mat-datepicker-toggle matSuffix [for]="myDatepicker"></mat-datepicker-toggle>
+    <mat-form-field>
+      <input matInput [matDatepicker]="myDatepicker" #searchInput formControlName="releasedAt">
 
-    <mat-datepicker #myDatepicker></mat-datepicker>
-  </mat-form-field>
+      <mat-datepicker-toggle matSuffix [for]="myDatepicker"></mat-datepicker-toggle>
 
-  <mat-form-field>
-    <textarea matInput placeholder="Description" formControlName="longDescription"></textarea>
-  </mat-form-field>
-</mat-dialog-content>
+      <mat-datepicker #myDatepicker></mat-datepicker>
+    </mat-form-field>
 
-<mat-dialog-actions>
-  <button class="mat-raised-button" (click)="close()">
-    Close
-  </button>
+    <mat-form-field>
+      <textarea matInput placeholder="Description" formControlName="longDescription"></textarea>
+    </mat-form-field>
+  </mat-dialog-content>
 
-  <button class="mat-raised-button mat-primary" #saveButton>
-    Save
-  </button>
-</mat-dialog-actions>
+  <mat-dialog-actions>
+    <button class="mat-raised-button" (click)="close()">
+      Close
+    </button>
+
+    <button class="mat-raised-button mat-primary" #saveButton [disabled]="form.invalid || form.pending">
+      Save
+    </button>
+  </mat-dialog-actions>
+</form>

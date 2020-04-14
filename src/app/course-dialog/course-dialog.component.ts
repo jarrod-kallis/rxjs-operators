@@ -7,6 +7,7 @@ import { concatMap, distinctUntilChanged, exhaustMap, filter, mergeMap, tap } fr
 import { fromPromise } from 'rxjs/internal-compatibility';
 
 import { Course } from '../model/course';
+import { StoreService } from '../common/store.service';
 
 @Component({
   selector: 'app-course-dialog',
@@ -25,7 +26,8 @@ export class CourseDialogComponent implements OnInit, AfterViewInit {
   constructor(
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<CourseDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) course: Course) {
+    @Inject(MAT_DIALOG_DATA) course: Course,
+    private store: StoreService) {
 
     this.course = course;
 
@@ -35,53 +37,53 @@ export class CourseDialogComponent implements OnInit, AfterViewInit {
       releasedAt: [moment(), Validators.required],
       longDescription: [course.longDescription, Validators.required]
     });
-
   }
 
   ngOnInit() {
     // let save$: Observable<Response>;
 
-    this.form.valueChanges
-      .pipe(
-        filter(() => this.form.valid), // Only allow a valid form to be saved
-        // tap((changes) => console.log(changes)),
+    // this.form.valueChanges
+    //   .pipe(
+    //     filter(() => this.form.valid), // Only allow a valid form to be saved
+    //     // tap((changes) => console.log(changes)),
 
-        // Will wait for the previous save attempt to complete before continuing to the next save
-        // concatMap(v => this.saveChanges(v)),
+    //     // Will wait for the previous save attempt to complete before continuing to the next save
+    //     // concatMap(v => this.saveChanges(v)),
 
-        // Will attempt to save to the DB in parallel
-        mergeMap(v => this.saveChanges(v))
-      )
-      .subscribe();
+    //     // Will attempt to save to the DB in parallel
+    //     mergeMap(v => this.saveChanges(v))
+    //   )
+    //   .subscribe();
   }
 
-  saveChanges(values: Course): Observable<any> {
-    return from(fetch(`/api/courses/${this.course.id}`, {
-      method: 'PUT',
-      body: JSON.stringify(values),
-      headers: {
-        contentType: 'application/json'
-      }
-    }));
-  }
-
-
+  // saveChanges(values: Course): Observable<any> {
+  //   return from(fetch(`/api/courses/${this.course.id}`, {
+  //     method: 'PUT',
+  //     body: JSON.stringify(values),
+  //     headers: {
+  //       contentType: 'application/json'
+  //     }
+  //   }));
+  // }
 
   ngAfterViewInit() {
-
-    fromEvent(this.saveButton.nativeElement, 'click')
-      .pipe(
-        // Will ignore multiple clicks of the save button if an existing save is in progress
-        exhaustMap(() => this.saveChanges(this.form.value))
-      )
-      .subscribe();
+    // fromEvent(this.saveButton.nativeElement, 'click')
+    //   .pipe(
+    //     // Will ignore multiple clicks of the save button if an existing save is in progress
+    //     exhaustMap(() => this.saveChanges(this.form.value))
+    //   )
+    //   .subscribe();
   }
-
-
 
   close() {
     this.dialogRef.close();
   }
 
-
+  submit() {
+    this.store.saveCourse(this.course.id, this.form.value)
+      .subscribe(
+        () => this.close(),
+        error => console.error('Error saving course:', error)
+      );
+  }
 }
